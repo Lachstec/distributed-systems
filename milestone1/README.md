@@ -2,7 +2,7 @@
 |Student   |Topic   |
 |---|---|
 |János   |Pipes   |
-|Leon   |RPC   |
+|Leon   |Sockets   |
 |Lorenz   |   |
 |Max   |   |
 
