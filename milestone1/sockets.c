@@ -9,7 +9,6 @@
 #include <netinet/in.h>
 
 #define MAX_STRING_SIZE 128
-#define MESSAGE_TERMINATOR "\r\n"
 char buffer[MAX_STRING_SIZE];
 
 void input(int socket_fd) {
