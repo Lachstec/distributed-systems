@@ -15,6 +15,8 @@ void input(int socket_fd) {
     	printf("Enter Text: ");
     	memset(buffer, 0, MAX_STRING_SIZE);
    	fgets(buffer, MAX_STRING_SIZE, stdin);
+	// remove the pesky \n!
+	buffer[strcspn(buffer, "\n")] = 0;
 	write(socket_fd, buffer, sizeof(buffer));
 	sleep(1);
 }

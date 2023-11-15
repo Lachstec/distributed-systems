@@ -6,11 +6,9 @@ CFLAGS:=-Wall -Werror -g
 %: %.c
 	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -o $(BUILDDIR)/$@ $<
-
-
-all: $(PROGS)
-	mkdir -p $(dir $BUILDDIR)
 	
+all: $(PROGS)
+
 .PHONY: clean
 clean:
 	rm -rf $(BUILDDIR) 
