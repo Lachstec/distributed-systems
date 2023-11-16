@@ -16,6 +16,7 @@ void input()
     printf("Enter Text: ");
     memset(buffer, 0, MAX_STRING_SIZE);
     fgets(buffer, MAX_STRING_SIZE, stdin);
+    buffer[strcspn(buffer, "\n")] = 0;
     raise(SIGSTOP);
 }
 
