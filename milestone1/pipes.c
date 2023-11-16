@@ -46,7 +46,7 @@ void input(int pipe[])
     memset(wbuffer, 0, MAX_STRING_SIZE);
     fgets(wbuffer, MAX_STRING_SIZE, stdin);
     write(pipe[1], wbuffer, sizeof(wbuffer));
-    sleep(1);
+    usleep(100);
 }
 
 void output(int pipe[])

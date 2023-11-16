@@ -18,7 +18,7 @@ void input(int socket_fd) {
 	// remove the pesky \n!
 	buffer[strcspn(buffer, "\n")] = 0;
 	write(socket_fd, buffer, sizeof(buffer));
-	sleep(1);
+	usleep(100);
 }
 
 void output(int socket_fd) {
