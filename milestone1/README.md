@@ -3,8 +3,8 @@
 |---|---|
 |János   |Pipes   |
 |Leon   |Sockets   |
-|Lorenz   |   |
-|Max   |   |
+|Lorenz   |Shared Memory   |
+|Max   |Threads   |
 
 
 ## building
