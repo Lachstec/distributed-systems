@@ -4,7 +4,7 @@
 |János   |Pipes   |
 |Leon   |Sockets   |
 |Lorenz   |   |
-|Max   |   |
+|Max   | Threads  |
 
 
 ## building
