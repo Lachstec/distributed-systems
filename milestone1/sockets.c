@@ -14,19 +14,39 @@ char buffer[MAX_STRING_SIZE];
 // input takes a socket file descriptor and uses it to read in a string from the command line
 // and write it to the socket. It then sleeps for 100ms.
 void input(int socket_fd) {
-    	printf("Enter Text: ");
-    	memset(buffer, 0, MAX_STRING_SIZE);
-   	fgets(buffer, MAX_STRING_SIZE, stdin);
-	// remove the pesky \n!
-	buffer[strcspn(buffer, "\n")] = 0;
-	write(socket_fd, buffer, sizeof(buffer));
-	usleep(100);
+	for(;;) {
+
+		printf("Enter Text: (quit to exit)");
+		memset(buffer, 0, MAX_STRING_SIZE);
+		fgets(buffer, MAX_STRING_SIZE, stdin);
+		// remove the pesky \n!
+		buffer[strcspn(buffer, "\n")] = 0;
+		if(strcmp(buffer, "quit") == 0) {
+			write(socket_fd, "quit", 4);
+			break;
+		}
+		write(socket_fd, buffer, sizeof(buffer));
+		// this is just to wait for the output process, the actual message gets discarded
+		read(socket_fd, buffer, sizeof(buffer));
+	}
+	// close the socket when done
+	close(socket_fd);
 }
 
 // output takes a socket file descriptor and reads from it to print it to the console.
 void output(int socket_fd) {
-	read(socket_fd, buffer, sizeof(buffer));
-	printf("Text entered: %s\n", buffer);
+	for(;;) {
+		memset(buffer, 0, MAX_STRING_SIZE);
+		read(socket_fd, buffer, sizeof(buffer));
+		if(strcmp(buffer, "quit") == 0) {
+			printf("Bye!\n");
+			break;
+		}
+		printf("Text entered: %s\n", buffer);
+		write(socket_fd, "a", 1);
+	}
+	// close the socket when done
+	close(socket_fd);
 }
 
 int main(int argc, char **argv) {
@@ -42,13 +62,10 @@ int main(int argc, char **argv) {
 	pid_t pid = fork();
 	if(pid == 0) {
 		printf("input process has pid %d\n", getpid());
-		for(;;) {
-			input(socket_vec[0]);
-		}
+		input(socket_vec[0]);	
 	} else {
 		printf("output process has pid %d\n", getpid());
-		for(;;) {
-			output(socket_vec[1]);
-		}
+		output(socket_vec[1]);	
 	}
+	return EXIT_SUCCESS;
 }
