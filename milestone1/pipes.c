@@ -32,6 +32,7 @@ int main(int argc, char **argv)
     while (1)
     {
         if(pid==0){
+            //pid of 0 means this is the child
             output(pipefds);
         } else {
             input(pipefds);
@@ -42,15 +43,20 @@ int main(int argc, char **argv)
 
 void input(int pipe[])
 {
+    //Reads from stdin
     printf("Enter Text: ");
     memset(wbuffer, 0, MAX_STRING_SIZE);
     fgets(wbuffer, MAX_STRING_SIZE, stdin);
+    //Writes to the pipe
     write(pipe[1], wbuffer, sizeof(wbuffer));
+    //Sleeps to avoid the "Enter Text" being written to early
     usleep(100);
 }
 
 void output(int pipe[])
 {
+    //Reads from the pipe, reading clears the pipe
     read(pipe[0],rbuffer,sizeof(rbuffer));
+    //prints to stdout
     printf("Entered Text: %s", rbuffer);
 }
