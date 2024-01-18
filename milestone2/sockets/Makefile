@@ -3,11 +3,11 @@ BUILDDIR:=build
 
 all: client server
 	
-client: client.c pingpong.c
+client: client.c measure.c
 	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -o $(BUILDDIR)/$@ $^
 
-server: server.c pingpong.c
+server: server.c measure.c
 	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -o $(BUILDDIR)/$@ $^
 

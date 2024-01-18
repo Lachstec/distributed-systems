@@ -17,11 +17,14 @@ typedef struct state {
 	int socket_fd;
 } ServerState;
 
+// Creates a ServerState by allocating memory for it and setting socket_fd to 
+// a valid TCP-Socket that gets bound to localhost on PORT.
 ServerState* init_server() {
 	// malloc for our server state
 	ServerState* state = (ServerState*)malloc(sizeof(ServerState));
 	// create the socket fd
-	state->socket_fd = socket(AF_INET, SOCK_STREAM, 0); 	
+	state->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	// check if socket was created successfully
 	if(state->socket_fd < 0) {
 		fprintf(stderr, "error creating a socket: %s\n", strerror(errno));
 		return NULL;
@@ -32,19 +35,25 @@ ServerState* init_server() {
 	server_address.sin_family = AF_INET;
 	server_address.sin_addr.s_addr = htonl(INADDR_ANY);
 	server_address.sin_port = htons(PORT);
+
+	// bind socket to specified address
 	int bind_result = bind(state->socket_fd, (struct sockaddr*)&server_address, sizeof(server_address));
+	// check if bind was successful
 	if(bind_result < 0) {
 		fprintf(stderr, "error binding the socket %s\n", strerror(errno));
 		return NULL;
 	}
+
 	return state;
 }
 
+// Closes the socket in server and then frees it.
 void deinit_server(ServerState *server) {
 	close(server->socket_fd);
 	free(server);
 }
 
+// Receive data from client_socket_fd and send it back to the client.
 void echo(int client_socket_fd) {
 	char echo_buf[BUF_SIZE];
 	int received_size;
