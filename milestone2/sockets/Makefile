@@ -1,4 +1,4 @@
-CFLAGS:=-Wall -Werror -g
+CFLAGS:=-Wall -g
 BUILDDIR:=build
 
 all: client server

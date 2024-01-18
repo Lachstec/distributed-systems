@@ -55,14 +55,14 @@ void deinit_server(ServerState *server) {
 
 // Receive data from client_socket_fd and send it back to the client.
 void echo(int client_socket_fd) {
-	char echo_buf[BUF_SIZE];
+	char byte;
 	int received_size;
-	if((received_size = recv(client_socket_fd, echo_buf, BUF_SIZE, 0)) < 0) {
+	if((received_size = recv(client_socket_fd, &byte, 1, 0)) < 0) {
 		fprintf(stderr, "error receiving data from client: %s\n", strerror(errno));
 		return;
 	}
-	echo_buf[received_size] = '\0';
-	printf("Received Message from Client: %s\n", echo_buf);
+	send(client_socket_fd, &byte, 1, 0);
+	printf("Received Message from Client: %d\n", byte);
 }
 
 int main(int argc, char **argv) {
@@ -78,17 +78,17 @@ int main(int argc, char **argv) {
 	printf("Server is listening on port %d for connections...\n", PORT);
 
 	// main server loop
-	for(;;) {
-		len = sizeof(client);
-		client_fd = accept(state->socket_fd, (struct sockaddr*)&client, &len);
-		if(client_fd < 0) {
-			fprintf(stderr, "error accepting client connection: %s\n", strerror(errno));
-			return EXIT_FAILURE;
-		}
-		printf("connected!\n");
-		echo(client_fd);
-		close(client_fd);
+	len = sizeof(client);
+	client_fd = accept(state->socket_fd, (struct sockaddr*)&client, &len);
+	if(client_fd < 0) {
+		fprintf(stderr, "error accepting client connection: %s\n", strerror(errno));
+		return EXIT_FAILURE;
 	}
+	for(;;) {
+		echo(client_fd);
+	}
+	close(client_fd);
+	
 
 	printf("cleaning up...\n");
 	deinit_server(state);
