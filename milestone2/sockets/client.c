@@ -63,7 +63,9 @@ void deinit_client(ClientState *client) {
 int main(int argc, char **argv) {
 
 	char data[8192];
-	memset(data, 0b1111000, 8192);
+	for(int i = 0; i < 8192; i += 1) {
+		data[i] = 'A' + (random() % 26);
+	}
 
 	if(argc < 2) {
 		fprintf(stderr, "usage: client <server address>\n");
@@ -86,7 +88,7 @@ int main(int argc, char **argv) {
 	current_ts.tv_usec = 0;
 
 	
-	for(int i = 0; i < 4; i += 1) {
+	for(int i = 0; i <= 4; i += 1) {
 		int bound = 0;
 		if(i == 0) {
 			printf("Sending 100 iterations of one byte of Data...\t");
@@ -99,7 +101,7 @@ int main(int argc, char **argv) {
 		bool first_packet = true;
 		bool got_nth_packet = false;
 
-		for(int j = 0; j < bound; j += 1) {
+		for(int j = 0; j < 1000; j += 1) {
 			gettimeofday(&current_ts, NULL);
 			char byte = 0;
 			ssize_t bytes_read;
@@ -112,7 +114,7 @@ int main(int argc, char **argv) {
 				bandwith = measure_bandwith(&n_pack_ts, &current_ts, (float)bytes_read);
 			}
 		}
-		printf("Done. Measured BW = %f\n", bandwith);
+		printf("Done. Measured BW = %f MB/s\n", bandwith);
 		bandwith = 0;
 	}
 

@@ -54,15 +54,16 @@ void deinit_server(ServerState *server) {
 }
 
 // Receive data from client_socket_fd and send it back to the client.
-void echo(int client_socket_fd) {
-	char byte;
+int echo(int client_socket_fd) {
+	char buf[8192];
 	int received_size;
-	if((received_size = recv(client_socket_fd, &byte, 1, 0)) < 0) {
+	if((received_size = recv(client_socket_fd, &buf, 8192, 0)) < 0) {
 		fprintf(stderr, "error receiving data from client: %s\n", strerror(errno));
-		return;
+		return -1;
 	}
-	send(client_socket_fd, &byte, 1, 0);
-	printf("Received Message from Client: %d\n", byte);
+	send(client_socket_fd, &buf, 1, 0);
+	printf("Received Message from Client: %d\n", buf[0]);
+	return 0;
 }
 
 int main(int argc, char **argv) {
@@ -84,9 +85,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "error accepting client connection: %s\n", strerror(errno));
 		return EXIT_FAILURE;
 	}
-	for(;;) {
-		echo(client_fd);
-	}
+	while(echo(client_fd) >= 0) {}
 	close(client_fd);
 	
 
