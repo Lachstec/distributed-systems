@@ -5,9 +5,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <errno.h>
 #include <unistd.h>
 
 #define PORT 8080
+#define BUF_SIZE 1024
 
 // Struct containg everything regarding the server state
 typedef struct state {
@@ -21,7 +23,7 @@ ServerState* init_server() {
 	// create the socket fd
 	state->socket_fd = socket(AF_INET, SOCK_STREAM, 0); 	
 	if(state->socket_fd < 0) {
-		fprintf(stderr, "error creating a socket: %s\n", strerror(state->socket_fd));
+		fprintf(stderr, "error creating a socket: %s\n", strerror(errno));
 		return NULL;
 	}
 	// assign address and port to the socket
@@ -32,7 +34,7 @@ ServerState* init_server() {
 	server_address.sin_port = htons(PORT);
 	int bind_result = bind(state->socket_fd, (struct sockaddr*)&server_address, sizeof(server_address));
 	if(bind_result < 0) {
-		fprintf(stderr, "error binding the socket %s\n", strerror(bind_result));
+		fprintf(stderr, "error binding the socket %s\n", strerror(errno));
 		return NULL;
 	}
 	return state;
@@ -41,6 +43,17 @@ ServerState* init_server() {
 void deinit_server(ServerState *server) {
 	close(server->socket_fd);
 	free(server);
+}
+
+void echo(int client_socket_fd) {
+	char echo_buf[BUF_SIZE];
+	int received_size;
+	if((received_size = recv(client_socket_fd, echo_buf, BUF_SIZE, 0)) < 0) {
+		fprintf(stderr, "error receiving data from client: %s\n", strerror(errno));
+		return;
+	}
+	echo_buf[received_size] = '\0';
+	printf("Received Message from Client: %s\n", echo_buf);
 }
 
 int main(int argc, char **argv) {
@@ -54,16 +67,20 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 	printf("Server is listening on port %d for connections...\n", PORT);
+
+	// main server loop
 	for(;;) {
 		len = sizeof(client);
 		client_fd = accept(state->socket_fd, (struct sockaddr*)&client, &len);
 		if(client_fd < 0) {
-			fprintf(stderr, "error accepting client connection: %s\n", strerror(client_fd));
+			fprintf(stderr, "error accepting client connection: %s\n", strerror(errno));
 			return EXIT_FAILURE;
 		}
 		printf("connected!\n");
+		echo(client_fd);
 		close(client_fd);
 	}
+
 	printf("cleaning up...\n");
 	deinit_server(state);
 	return EXIT_SUCCESS;
