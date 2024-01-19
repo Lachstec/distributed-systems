@@ -8,7 +8,8 @@
 //Process Commmunication with Pipes. 'transmitter' sends data to the 'receiver'
 //process and 'receiver' sends and 'ACK' when the data is fully received
 //This is a bidirectional communication.
-
+//multi_write & multi_read implementation taken from:
+//https://stackoverflow.com/a/68879322
 //The processes that transmit and receive data
 void transmitter(int pipeRead[], int pipeWrite[]);
 
