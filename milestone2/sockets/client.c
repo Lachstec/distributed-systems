@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
 		bool first_packet = true;
 		bool got_nth_packet = false;
 
-		for(int j = 0; j < 1000; j += 1) {
+		for(int j = 0; j < 100; j += 1) {
 			gettimeofday(&current_ts, NULL);
 			char byte = 0;
 			ssize_t bytes_read;
