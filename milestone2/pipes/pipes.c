@@ -18,6 +18,8 @@ ssize_t multi_read(int file, char* buffer, size_t numBytes);
 
 ssize_t multi_write(int file, char* buffer, size_t numBytes);
 
+float calc_bandwith(int filesize, int iterations, long time);
+
 char* generateData(int KiB){
 	//KiB or MiB, not KB and MB
 	printf("Generating %4dKiB\n", KiB);
@@ -66,8 +68,7 @@ int main(int argc, char **argv)
 	exit(0);
 }
 
-void transmitter(int pipeRead[], int pipeWrite[])
-{
+void transmitter(int pipeRead[], int pipeWrite[]){
 	//If we want to do the 1KiB, 2KiB, 4KiB ... 8MiB,
 	//we can just double initalSize 13 times to get to 8MiB
 	int initalSize = 1;
@@ -94,7 +95,7 @@ void transmitter(int pipeRead[], int pipeWrite[])
 		//this isnt added to the total time, but is needed for communication
 		memory[0] = 'n';
 		multi_write(pipeWrite[1], memory, initalSize*1000);
-		printf("Total time of %4ldms for %4dKiB\n", totalTime, initalSize);
+		printf("Total time of %4ldms for %4dKiB, with average of %.4fMB/s\n", totalTime, initalSize, calc_bandwith(initalSize, 100, totalTime));
 		initalSize *= 2;
 	}
 	memory[0] = 'e';
@@ -102,8 +103,7 @@ void transmitter(int pipeRead[], int pipeWrite[])
 	free(memory);
 }
 
-void receiver(int pipeRead[], int pipeWrite[])
-{	
+void receiver(int pipeRead[], int pipeWrite[]){	
 	int check = 1; 
 	int placeholder = 1;
 	char* memory = malloc(placeholder*1000);
@@ -160,3 +160,9 @@ ssize_t multi_write(int file, char* buffer, size_t numBytes){
 		transmitBytes = writeBytes;
 	return transmitBytes;
 }
+
+float calc_bandwith(int filesize, int iterations, long time){
+	float sentSize = (float)(filesize * iterations)/1024;
+	return sentSize/((float)time/1000);
+}
+
