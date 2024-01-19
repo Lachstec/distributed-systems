@@ -5,14 +5,13 @@
 #include <sys/time.h>
 #include <stdlib.h>
 
-#define MAX_STRING_SIZE 128
-//2 Buffers to makes sure pipes does not read from the same buffer.
-char wbuffer[MAX_STRING_SIZE];
-char rbuffer[MAX_STRING_SIZE];
+//this is not good
+int currentsize = 1;
+//Process Commmunication with Pipes. 'transmitter' sends data to the 'receiver'
+//process and 'receiver' sends and 'ACK' when the data is fully received
+//This is a bidirectional communication.
 
-//Process Commmunication with Pipes. Input Process writes while Output Process reads
-//This is a unidirectional communication.
-
+//The processes that transmit and receive data
 void transmitter(int pipeRead[], int pipeWrite[]);
 
 void receiver(int pipeRead[], int pipeWrite[]);
@@ -40,16 +39,16 @@ int main(int argc, char **argv)
 {   
 	printf("Latency Test (exit with CTRL + c)\n");
 	int pipeData[2], pipeACK[2];
-	int returnstatus1, returnstatus2;
+	int returnstatusData, returnstatusACK;
 	int pid;
-	//This function creates a pipe [0] is the reading end
+	//This function creates pipes, [0] is the reading end
 	//while [1] is the writing end
 	//If something goes wrong during creation, 
 	//the programm will exit with statuscode (1).
-	returnstatus1=pipe(pipeData);
-	returnstatus2=pipe(pipeACK);
+	returnstatusData=pipe(pipeData);
+	returnstatusACK=pipe(pipeACK);
 	
-	if(returnstatus1 == -1 || returnstatus2 == -1){
+	if(returnstatusData == -1 || returnstatusACK == -1){
 		fprintf(stderr, "Unable to create pipe\n");
 		return 1;
 	}
@@ -69,7 +68,7 @@ void transmitter(int pipeRead[], int pipeWrite[])
 {
 	//If we want to do the 1KiB, 2KiB, 4KiB ... 8MiB,
 	//we can just double initalSize 13 times to get to 8MiB
-	int initalSize = 64;
+	int initalSize = currentsize;
 	long totalTime = 0;
     	//Allocate the memory, to send to the other process
 	char* memory = generateData(initalSize);
@@ -78,15 +77,18 @@ void transmitter(int pipeRead[], int pipeWrite[])
 		start = getTime();
 		//To Check if the full size has been received
 		int check;
-        	//Writes to the pipe
-		if(multi_write(pipeWrite[1], memory, 64000) != (ssize_t)(initalSize*1000))
+        	//Multi-Write to the pipe
+		if(multi_write(pipeWrite[1], memory, initalSize*1000) != (ssize_t)(initalSize*1000))
 				fprintf(stderr, "Write error %s()\n",__func__);
+		//Check if the whole data was received
 		if(read(pipeRead[0], &check, sizeof(check)) != sizeof(check))
 			fprintf(stderr, "Read error in %s()\n",__func__);
 		end = getTime(); 
 		
 		totalTime += end - start;
 	}
+	//TODO: implement a good way to end both processes
+	//and what iteration we're on
 	printf("Total time of %ldms for %dKiB\n", totalTime, initalSize);
 	exit(0);
 }
@@ -94,11 +96,15 @@ void transmitter(int pipeRead[], int pipeWrite[])
 void receiver(int pipeRead[], int pipeWrite[])
 {	
 	int check = 1; 
-	int placeholder = 64000;
-	char* memory = malloc(placeholder);
-	for(int i = 0; i < 100 ; i++){
+	int placeholder = -1;
+	char* memory;
+	for(;;){
+		if(placeholder != currentsize){
+			placeholder = currentsize;
+			memory = malloc(placeholder*1000);
+		}
         	//Reads from the pipe, reading clears the pipe
-		if(multi_read(pipeRead[0], memory, placeholder) != placeholder)
+		if(multi_read(pipeRead[0], memory, placeholder*1000) != placeholder*1000)
 				fprintf(stderr, "Read error in %s()\n", __func__);
 		if(write(pipeWrite[1], &check, sizeof(check)) != sizeof(check))
 			fprintf(stderr, "Write error in %s()\n", __func__);
