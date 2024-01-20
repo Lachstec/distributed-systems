@@ -73,10 +73,11 @@ void transmitter(int pipeRead[], int pipeWrite[]){
 	//If we want to do the 1KiB, 2KiB, 4KiB ... 8MiB,
 	//we can just double initalSize 13 times to get to 8MiB
 	int initalSize = 1;
-	long totalTime = 0;
+	//long totalTime = 0;
 	char* memory = NULL;
     	//Allocate the memory, to send to the other process
 	for(int runs = 0; runs < 14; runs++){
+		long totalTime = 0;
 		if(memory != NULL)
 			free(memory);
 		memory = generateData(initalSize);
@@ -98,7 +99,7 @@ void transmitter(int pipeRead[], int pipeWrite[]){
 		//this isnt added to the total time, but is needed for communication
 		memory[0] = 'n';
 		multi_write(pipeWrite[1], memory, initalSize*1000);
-		printf("Total time of %4ldms for %4dKiB, with average of %.4fMB/s\n", totalTime, initalSize, calc_bandwith(initalSize, 100, totalTime));
+		printf("Total time of %5.4fms for %4dKiB, with average of %.4fMB/s\n", (float)totalTime/1000, initalSize, calc_bandwith(initalSize, 100, totalTime));
 		initalSize *= 2;
 	}
 	memory[0] = 'e';
@@ -129,10 +130,11 @@ void receiver(int pipeRead[], int pipeWrite[]){
 	}
 }
 
+//Returns the Time in microseconds, for a better measurement for short intervals
 long getTime(){
 	struct timeval timecheck;
 	gettimeofday(&timecheck, NULL);
-	return (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec /1000;
+	return (long)timecheck.tv_sec * 1000000 + (long)timecheck.tv_usec;
 }
 //Using ssize_t because read and write can return negative values
 ssize_t multi_read(int file, char* buffer, size_t numBytes){
@@ -167,6 +169,6 @@ ssize_t multi_write(int file, char* buffer, size_t numBytes){
 
 float calc_bandwith(int filesize, int iterations, long time){
 	float sentSize = (float)(filesize * iterations)/1024;
-	return sentSize/((float)time/1000);
+	return sentSize/((float)time/1000000);
 }
 
