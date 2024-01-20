@@ -77,6 +77,8 @@ void transmitter(int pipeRead[], int pipeWrite[]){
 	char* memory = NULL;
     	//Allocate the memory, to send to the other process
 	for(int runs = 0; runs < 14; runs++){
+		if(memory != NULL)
+			free(memory);
 		memory = generateData(initalSize);
     		for(int i = 0; i < 100; i++){
 			long start, end;
@@ -117,6 +119,7 @@ void receiver(int pipeRead[], int pipeWrite[]){
     		
 		if(memory[0] == 'n'){
 			placeholder *= 2;
+			free(memory);
 			memory = malloc(placeholder*1000);
 		}
 		if(memory[0] == 'e'){
