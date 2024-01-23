@@ -14,6 +14,7 @@
 
 #define PORT 8080
 
+// create a socket and connect to the specified inet addr. returns the socket fd or -1 on error.
 int init_client(const char *server_inet_addr) {
 	int socket_fd;
 	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -67,18 +68,6 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	struct timeval start_ts, n_pack_ts, first_pack_ts, current_ts;
-	double bandwith = 0;
-	start_ts.tv_sec = 0;
-	start_ts.tv_usec = 0;
-	n_pack_ts.tv_sec = 0;
-	n_pack_ts.tv_usec = 0;
-	first_pack_ts.tv_sec = 0;
-	first_pack_ts.tv_usec = 0;
-	current_ts.tv_sec = 0;
-	current_ts.tv_usec = 0;
-
-	
 	for(int i = 0; i <= 4; i += 1) {
 		int bound = 0;
 		if(i == 0) {
@@ -91,22 +80,23 @@ int main(int argc, char **argv) {
 
 		bool first_packet = true;
 		bool got_nth_packet = false;
+		Measurement *measurement = new_measurement();
 
 		for(int j = 0; j < 100; j += 1) {
-			gettimeofday(&current_ts, NULL);
+			get_current_time(measurement);
 			char byte = 0;
 			ssize_t bytes_read;
 			send(client_fd, data, bound, 0);
 			bytes_read = recv(client_fd, &byte, 1, 0);
 			if(!got_nth_packet) {
-				gettimeofday(&n_pack_ts, NULL);
+				start_measurement(measurement);
 				got_nth_packet = true;
 			} else {
-				bandwith = measure_bandwith(&n_pack_ts, &current_ts, (float)bytes_read);
+				measure_bandwidth(measurement, bytes_read);
 			}
 		}
-		printf("Done. Measured BW = %f MB/s\n", bandwith);
-		bandwith = 0;
+		printf("Done. Measured BW = %f MB/s\n", measurement->bandwidth);
+		free_measurement(measurement);
 	}
 
 	return EXIT_SUCCESS;

@@ -1,6 +1,6 @@
 #include "measure.h"
 
-// Number of measurments to skip in order to compensate for slow start
+// Number of measurments to skip in order to compensate for tcp slow start
 #define SKIPS 15
 
 double bandwith = -1;
@@ -8,34 +8,50 @@ float total_bytes = 0;
 int number_measurement_values = 0;
 int skips = SKIPS;
 
+Measurement* new_measurement() {
+	Measurement *measurement = (Measurement*)malloc(sizeof(Measurement));
+	measurement->start_timestamp.tv_sec = 0;
+	measurement->start_timestamp.tv_usec = 0;
+	measurement->current_timestamp.tv_sec = 0;
+	measurement->current_timestamp.tv_usec = 0;
+	measurement->number_measurement_values = 0;
+	measurement->bandwidth = -1.0;
+	measurement->total_bytes = 0;
+	return measurement;
+}
+
+void get_current_time(Measurement *measurement) {
+	gettimeofday(&measurement->current_timestamp, NULL);
+}
+
+void start_measurement(Measurement *measurement) {
+	gettimeofday(&measurement->start_timestamp, NULL);
+}
+
+void free_measurement(Measurement *measurement) {
+	free(measurement);
+}
+
 double subtract_timeval(struct timeval *lhs, struct timeval *rhs) {
 	double difference = lhs->tv_sec - rhs->tv_sec;
 	difference += (lhs->tv_usec - rhs->tv_usec) / 1000000.0;
 	return difference;
 }
 
-double measure_bandwith(
-	struct timeval *start_timestamp,
-	struct timeval *current_timestamp,
-	float bytes_read
-	)
-{
-	total_bytes += bytes_read;
+void measure_bandwidth(Measurement *measurement, uint64_t bytes_read) {
+	measurement->total_bytes += bytes_read;
 
 	if(skips > 0) {
 		skips -= 1;
-		return bandwith;
 	}
 
-	double ts_diff = subtract_timeval(current_timestamp, start_timestamp);
+	double ts_diff = subtract_timeval(&measurement->current_timestamp, &measurement->start_timestamp);
 	double current_bw = (total_bytes / (1024 * 1024)) / ts_diff;
 
-	// 
 	if(bandwith < 0) {
-		bandwith = current_bw;
+		measurement->bandwidth = current_bw;
 	} else {
-		bandwith = (number_measurement_values + 1) / (( number_measurement_values / bandwith ) + (1 / current_bw ));
+		measurement->bandwidth = (measurement->number_measurement_values + 1) / (( measurement->number_measurement_values / measurement->bandwidth ) + (1 / current_bw ));
 	}
-	number_measurement_values += 1;
-	return bandwith;
+	measurement->number_measurement_values += 1;
 }

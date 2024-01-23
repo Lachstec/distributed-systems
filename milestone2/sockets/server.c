@@ -11,8 +11,7 @@
 #define PORT 8080
 #define BUF_SIZE 1024
 
-// Creates a ServerState by allocating memory for it and setting socket_fd to 
-// a valid TCP-Socket that gets bound to localhost on PORT.
+// create a socket and bind it. returns the socket fd or -1 when something went wrong
 int init_server() {
 	// create the socket fd
 	int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
