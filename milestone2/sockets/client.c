@@ -14,16 +14,12 @@
 
 #define PORT 8080
 
-typedef struct {
+int init_client(const char *server_inet_addr) {
 	int socket_fd;
-} ClientState;
-
-ClientState* init_client(const char *server_inet_addr) {
-	ClientState *state = (ClientState*)malloc(sizeof(ClientState));
-	state->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if(state->socket_fd < 0) {
+	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if(socket_fd < 0) {
 		fprintf(stderr, "error creating client socket fd: %s\n", strerror(errno));
-		return NULL;
+		return -1;
 	}
 
 	struct sockaddr_in server_address;
@@ -39,7 +35,7 @@ ClientState* init_client(const char *server_inet_addr) {
 		host_info = gethostbyname(server_inet_addr);
 		if(host_info == NULL) {
 			fprintf(stderr, "error connecting to server: %s\n", strerror(errno));
-			return NULL;
+			return -1;
 		}
 		memcpy((char*) &server_address.sin_addr, &addr, sizeof(addr));
 	}
@@ -47,17 +43,12 @@ ClientState* init_client(const char *server_inet_addr) {
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(PORT);
 
-	if(connect(state->socket_fd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+	if(connect(socket_fd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
 		fprintf(stderr, "error connecting to server: %s\n", strerror(errno));
-		return NULL;
+		return -1;
 	}
 
-	return state;
-}
-
-void deinit_client(ClientState *client) {
-	close(client->socket_fd);
-	free(client);
+	return socket_fd;
 }
 
 int main(int argc, char **argv) {
@@ -71,8 +62,8 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "usage: client <server address>\n");
 		return EXIT_FAILURE;
 	}
-	ClientState *client = init_client(argv[1]);
-	if(client == NULL) {
+	int client_fd = init_client(argv[1]);
+	if(client_fd < 0) {
 		return EXIT_FAILURE;
 	}
 
@@ -105,8 +96,8 @@ int main(int argc, char **argv) {
 			gettimeofday(&current_ts, NULL);
 			char byte = 0;
 			ssize_t bytes_read;
-			send(client->socket_fd, data, bound, 0);
-			bytes_read = recv(client->socket_fd, &byte, 1, 0);
+			send(client_fd, data, bound, 0);
+			bytes_read = recv(client_fd, &byte, 1, 0);
 			if(!got_nth_packet) {
 				gettimeofday(&n_pack_ts, NULL);
 				got_nth_packet = true;
@@ -118,6 +109,5 @@ int main(int argc, char **argv) {
 		bandwith = 0;
 	}
 
-	deinit_client(client);
 	return EXIT_SUCCESS;
 }

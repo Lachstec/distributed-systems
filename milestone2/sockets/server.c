@@ -11,23 +11,15 @@
 #define PORT 8080
 #define BUF_SIZE 1024
 
-// Struct containg everything regarding the server state
-typedef struct state {
-	// filedescriptor of the server socket
-	int socket_fd;
-} ServerState;
-
 // Creates a ServerState by allocating memory for it and setting socket_fd to 
 // a valid TCP-Socket that gets bound to localhost on PORT.
-ServerState* init_server() {
-	// malloc for our server state
-	ServerState* state = (ServerState*)malloc(sizeof(ServerState));
+int init_server() {
 	// create the socket fd
-	state->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 	// check if socket was created successfully
-	if(state->socket_fd < 0) {
+	if(socket_fd < 0) {
 		fprintf(stderr, "error creating a socket: %s\n", strerror(errno));
-		return NULL;
+		return -1;
 	}
 	// assign address and port to the socket
 	struct sockaddr_in server_address;
@@ -37,20 +29,14 @@ ServerState* init_server() {
 	server_address.sin_port = htons(PORT);
 
 	// bind socket to specified address
-	int bind_result = bind(state->socket_fd, (struct sockaddr*)&server_address, sizeof(server_address));
+	int bind_result = bind(socket_fd, (struct sockaddr*)&server_address, sizeof(server_address));
 	// check if bind was successful
 	if(bind_result < 0) {
 		fprintf(stderr, "error binding the socket %s\n", strerror(errno));
-		return NULL;
+		return -1;
 	}
 
-	return state;
-}
-
-// Closes the socket in server and then frees it.
-void deinit_server(ServerState *server) {
-	close(server->socket_fd);
-	free(server);
+	return socket_fd;
 }
 
 // Receive data from client_socket_fd and send it back to the client.
@@ -70,8 +56,8 @@ int main(int argc, char **argv) {
 	int client_fd;
 	unsigned int len;
 
-	ServerState* state = init_server();
-	if(listen(state->socket_fd, 5) == -1) {
+	int server_fd = init_server();
+	if(listen(server_fd, 5) == -1) {
 		fprintf(stderr, "error listening for connections\n");
 		return EXIT_FAILURE;
 	}
@@ -79,7 +65,7 @@ int main(int argc, char **argv) {
 
 	// main server loop
 	len = sizeof(client);
-	client_fd = accept(state->socket_fd, (struct sockaddr*)&client, &len);
+	client_fd = accept(server_fd, (struct sockaddr*)&client, &len);
 	if(client_fd < 0) {
 		fprintf(stderr, "error accepting client connection: %s\n", strerror(errno));
 		return EXIT_FAILURE;
@@ -89,6 +75,5 @@ int main(int argc, char **argv) {
 	
 
 	printf("cleaning up...\n");
-	deinit_server(state);
 	return EXIT_SUCCESS;
 }
