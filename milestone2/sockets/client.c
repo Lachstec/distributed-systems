@@ -78,7 +78,6 @@ int main(int argc, char **argv) {
 			bound = 1024 * (1 << i);
 		}
 
-		bool first_packet = true;
 		bool got_nth_packet = false;
 		Measurement *measurement = new_measurement();
 

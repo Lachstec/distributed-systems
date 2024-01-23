@@ -7,7 +7,7 @@ client: client.c measure.c
 	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -o $(BUILDDIR)/$@ $^
 
-server: server.c measure.c
+server: server.c
 	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) -o $(BUILDDIR)/$@ $^
 
