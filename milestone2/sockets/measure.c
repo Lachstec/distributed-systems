@@ -3,9 +3,6 @@
 // Number of measurments to skip in order to compensate for tcp slow start
 #define SKIPS 15
 
-double bandwith = -1;
-float total_bytes = 0;
-int number_measurement_values = 0;
 int skips = SKIPS;
 
 Measurement* new_measurement() {
@@ -46,9 +43,9 @@ void measure_bandwidth(Measurement *measurement, uint64_t bytes_read) {
 	}
 
 	double ts_diff = subtract_timeval(&measurement->current_timestamp, &measurement->start_timestamp);
-	double current_bw = (total_bytes / (1024 * 1024)) / ts_diff;
+	double current_bw = ((double)measurement->total_bytes / (1024 * 1024)) / ts_diff;
 
-	if(bandwith < 0) {
+	if(measurement->bandwidth < 0) {
 		measurement->bandwidth = current_bw;
 	} else {
 		measurement->bandwidth = (measurement->number_measurement_values + 1) / (( measurement->number_measurement_values / measurement->bandwidth ) + (1 / current_bw ));
