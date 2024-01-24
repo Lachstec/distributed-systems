@@ -1,3 +1,4 @@
+#include <asm-generic/socket.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,12 +8,18 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#ifdef linux
+	#include <linux/tcp.h>
+#else
+	#error "only linux is supported"
+#endif
 #include <sys/time.h>
 #include <unistd.h>
 
 #include "measure.h"
 
 #define PORT 8080
+#define PAYLOAD_MAX 8388608
 
 // create a socket and connect to the specified inet addr. returns the socket fd or -1 on error.
 int init_client(const char *server_inet_addr) {
@@ -49,13 +56,17 @@ int init_client(const char *server_inet_addr) {
 		return -1;
 	}
 
+	setsockopt(socket_fd, SOL_SOCKET, TCP_INFO, &(int){1}, sizeof(int));
+
 	return socket_fd;
 }
 
 int main(int argc, char **argv) {
-
-	char data[8192];
-	for(int i = 0; i < 8192; i += 1) {
+	char *data = (char*)malloc(PAYLOAD_MAX * sizeof(char));
+	struct tcp_info info;
+	socklen_t info_length = sizeof(info);
+	
+	for(int i = 0; i < PAYLOAD_MAX; i += 1) {
 		data[i] = 'A' + (random() % 26);
 	}
 
@@ -73,9 +84,12 @@ int main(int argc, char **argv) {
 		if(i == 0) {
 			printf("Sending 100 iterations of one byte of Data...\t");
 			bound = 1;
-		} else {
+		} else if(i < 4) {
 			printf("Sending 100 iterations of %d KiB of Data...\t", 1 << (i - 1));
 			bound = 1024 * (1 << i);
+		} else {
+			printf("Sending 100 iterations of 8 MiB of Data...\t");
+			bound = PAYLOAD_MAX - 1;
 		}
 
 		bool got_nth_packet = false;
@@ -94,9 +108,10 @@ int main(int argc, char **argv) {
 				measure_bandwidth(measurement, bytes_read);
 			}
 		}
-		printf("Done. Measured BW = %f MB/s\n", measurement->bandwidth);
+		getsockopt(client_fd, SOL_SOCKET, TCP_INFO, &info, &info_length);
+		printf("Done. Measured BW = %f MB/s; Latency (RTT) = %d\n", measurement->bandwidth, info.tcpi_rtt);
 		free_measurement(measurement);
 	}
-
+	free(data);
 	return EXIT_SUCCESS;
 }
