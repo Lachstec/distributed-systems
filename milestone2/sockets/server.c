@@ -50,7 +50,7 @@ int echo(int client_socket_fd) {
 	return 0;
 }
 
-int main(int argc, char **argv) {
+int main() {
 	struct sockaddr_in client;
 	int client_fd;
 	unsigned int len;

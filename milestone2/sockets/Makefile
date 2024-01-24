@@ -1,4 +1,4 @@
-CFLAGS:=-Wall -g
+CFLAGS:=-Wall -Wextra -Wpedantic -g
 BUILDDIR:=build
 
 all: client server
