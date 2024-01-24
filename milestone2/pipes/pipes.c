@@ -1,4 +1,5 @@
 #include <bits/types/struct_timeval.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -20,6 +21,9 @@ ssize_t multi_read(int file, char* buffer, size_t numBytes);
 ssize_t multi_write(int file, char* buffer, size_t numBytes);
 
 float calc_bandwith(int filesize, int iterations, long time);
+
+void latency_traffic(int iterations, int pipeRead[], int pipeWrite[]);
+
 
 char* generateData(int KiB){
 	//KiB or MiB, not KB and MB
@@ -70,12 +74,21 @@ int main(int argc, char **argv)
 }
 
 void transmitter(int pipeRead[], int pipeWrite[]){
+	//Latency measurement
+	int iterations = 100;
+	long start = getTime();
+	latency_traffic(iterations, pipeRead, pipeWrite);
+	long end = getTime();
+	uint8_t ctrchar = 'n';
+	write(pipeWrite[1], &ctrchar, sizeof(ctrchar));
+	float latAVG = (end-start)/(float)iterations;
+	printf("Latency of %f\xC2\xB5s\n", latAVG);
 	//If we want to do the 1KiB, 2KiB, 4KiB ... 8MiB,
 	//we can just double initalSize 13 times to get to 8MiB
 	int initalSize = 1;
 	//long totalTime = 0;
 	char* memory = NULL;
-    	//Allocate the memory, to send to the other process
+    	//Allocate the memory, to send to the other processes
 	for(int runs = 0; runs < 14; runs++){
 		long totalTime = 0;
 		if(memory != NULL)
@@ -108,6 +121,15 @@ void transmitter(int pipeRead[], int pipeWrite[]){
 }
 
 void receiver(int pipeRead[], int pipeWrite[]){	
+	//Latency Part
+	int8_t buf;
+	for(;;){
+		read(pipeRead[0], &buf, sizeof(buf));
+		if(buf == 'n')
+			break;
+		write(pipeWrite[1], &buf, sizeof(buf));
+	}
+	//Bandwith Part
 	int check = 1; 
 	int placeholder = 1;
 	char* memory = malloc(placeholder*1000);
@@ -171,4 +193,17 @@ float calc_bandwith(int filesize, int iterations, long time){
 	float sentSize = (float)(filesize * iterations)/1024;
 	return sentSize/((float)time/1000000);
 }
+
+void latency_traffic(int iterations, int pipeRead[], int pipeWrite[]){
+	if(iterations < 1){
+		fprintf(stderr, "Not enough iterations");
+		iterations = 1;
+	}
+	uint8_t pingPong = '!';
+	for(int i = 0; i < iterations;  i++){
+		write(pipeWrite[1], &pingPong, sizeof(pingPong));
+		read(pipeRead[0], &pingPong, sizeof(pingPong));
+	}
+}
+
 
